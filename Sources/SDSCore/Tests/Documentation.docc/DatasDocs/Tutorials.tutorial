@@ -1,0 +1,15 @@
+@Tutorials(name: "Tavola dei Contenuti dei Tutorial") {
+    @Intro(title: "Esplora il Server della SDS") {
+        In questa raccolta di Tutorial, imparerai ad usare il Server della Settimana dello Studente al meglio
+        
+        @Image(source: "", alt: "c")
+    }
+    
+    @Chapter(name: "Leggi i dati") {
+        Permetti ad altre persone di accedere al database attraverso l'app, il Bot Telegram o il WebPortal 
+        
+        @Image(source: "login_tutorial_preview", alt: "cioa")
+        
+        @TutorialReference(tutorial: "doc:CreateLoginUser")
+    }
+}

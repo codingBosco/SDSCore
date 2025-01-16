@@ -1,0 +1,52 @@
+@Tutorial(time: 2) {
+    @Intro(title: "Aggiungi un nuovo utente autorizzato") {
+        Permetti ad altre persone di accedere al database attraverso l'app, il Bot Telegram o il WebPortal. Segui il tutorial più adatto al tuo sistema operativo (Mac, Windows o Linux)
+        
+        @Image(source: "login_tutorial_banner.png", alt: "ciao")
+    }
+    
+    @Section(title: "Aggiungi un nuovo Utente - macOS") {
+        @ContentAndMedia {
+            Segui il tutorial per sistemi basati su macOS (disponibil per iMac, MacBook Air, MacBook Pro e Mac Mini)
+            
+            @Image(source: <#file#>, alt: "<#accessible description#>")
+        }
+        
+        @Steps {
+            @Step {
+                
+                CIao
+                @Image(source: <#file#>, alt: "<#accessible description#>")
+            }
+            
+            @Step {
+                Ciao
+                
+                @Code(name: "<#display name#>", file: <#filename.swift#>)
+            }
+        }
+    }
+    
+    @Section(title: "Aggiungi un nuovo Utente - Windows") {
+        @ContentAndMedia {
+            Segui il tutorial per computer che utilizzano Windows (disponibile su: Windows 10, 11)
+            
+            @Image(source: <#file#>, alt: "<#accessible description#>")
+        }
+        
+        @Steps {
+            @Step {
+                
+                CIao
+                @Image(source: <#file#>, alt: "<#accessible description#>")
+            }
+            
+            @Step {
+                Ciao
+                
+                @Code(name: "<#display name#>", file: <#filename.swift#>)
+            }
+        }
+    }
+    
+}
