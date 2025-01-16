@@ -9,7 +9,7 @@ import SwiftUI
 
 @available(iOS 17.0, *)
 struct LoginTestView: View {
-    @State var db = DatabaseModel()
+    @State var db = SDSLDBModel()
     
     @State private var username: String = ""
     @State private var secureCode: String = ""
@@ -36,5 +36,5 @@ struct LoginTestView: View {
 @available(iOS 17.0, *)
 #Preview {
     LoginTestView()
-        .environment(DatabaseModel())
+        .environment(SDSLDBModel())
 }

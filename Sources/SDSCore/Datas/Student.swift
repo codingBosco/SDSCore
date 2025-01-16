@@ -9,7 +9,8 @@ import Foundation
 
 //MARK: Student
 ///Una persona che frequenta le classi e partecipa ai pacchetti della SDS
-public struct Student: Identifiable, Codable {
+@DebugDescription
+public struct Student: SDSEntity {
     
     public var id: String
     
@@ -45,6 +46,46 @@ public struct Student: Identifiable, Codable {
         self.isModerator = isModerator
     }
     
+    
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(self.id, forKey: .id)
+        try container.encode(self.name, forKey: .name)
+        try container.encode(self.surname, forKey: .surname)
+        try container.encode(self.classe, forKey: .classe)
+        try container.encode(self.attendedPacks, forKey: .attendedPacks)
+        try container.encode(self.isGuardian, forKey: .isGuardian)
+        try container.encode(self.isIgnored, forKey: .isIgnored)
+        try container.encode(self.isModerator, forKey: .isModerator)
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case surname
+        case classe
+        case attendedPacks = "attended_packs"
+        case isGuardian = "is_guardian"
+        case isIgnored = "is_ignored"
+        case isModerator = "is_mod"
+    }
+    
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.surname = try container.decode(String.self, forKey: .surname)
+        self.classe = try container.decode(String.self, forKey: .classe)
+        self.attendedPacks = try container.decode([String].self, forKey: .attendedPacks)
+        self.isGuardian = try container.decode([String].self, forKey: .isGuardian)
+        self.isIgnored = try container.decode([IgnoredStudentState].self, forKey: .isIgnored)
+        self.isModerator = try container.decode([String].self, forKey: .isModerator)
+    }
+    
+    public var debugDescription: String {
+        "\(name) \(surname) - \(classe)"
+    }
+    
 }
 
 public struct IgnoredStudentState: Codable {
@@ -53,5 +94,11 @@ public struct IgnoredStudentState: Codable {
     public var additionalNotes: String
     
     public var ignoranceSummary : String
+    
+    public init(day: String, additionalNotes: String, ignoranceSummary: String) {
+        self.day = day
+        self.additionalNotes = additionalNotes
+        self.ignoranceSummary = ignoranceSummary
+    }
     
 }

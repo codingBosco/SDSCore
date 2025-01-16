@@ -7,6 +7,10 @@
 
 import Foundation
 
+///Una struttura di dati che rappresenta un errore interno al server
+///
+///Per scoprire di più sulla gestione degli errori e i report vedi <doc:Server###Report-e-Cronologia-errori>
+///
 struct ErrorHistoryItem: Codable {
     let timestamp: String
     let apiRequest: String

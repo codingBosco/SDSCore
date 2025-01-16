@@ -8,7 +8,7 @@
 import Foundation
 
 ///Un insieme di 4 blocchi orari previsti dalla scuola, contente diversi pacchetti per ogni classe e blocco.
-public struct Day: Identifiable, Codable {
+public struct Day: SDSEntity {
     
     public var id: String
     

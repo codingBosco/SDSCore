@@ -8,11 +8,11 @@
 import Foundation
 
 @Observable
-///La classe principale su cui poggia l'app, contenente i dati caricati e le chiamate API al server.
+///La classe principale del Database Locale della SDS, contenente i dati caricati e le chiamate API al server custom, avviato dall'organizzazione.
 ///
 ///``Profile``
 ///
-public class DatabaseModel {
+public class SDSLDBModel {
     
     public init(
         students: [Student] = [],
@@ -129,8 +129,12 @@ public class DatabaseModel {
             
             let (data, urlResponse) = try await URLSession.shared.data(for: request)
             
-            guard urlResponse is HTTPURLResponse else {
-                throw ServerError.invalidResponse
+            guard let response = urlResponse as? HTTPURLResponse else {
+                throw ServerError.invalidURL
+            }
+            
+            if response.statusCode == 500 {
+                throw ServerError.invalidData
             }
             
             
@@ -307,6 +311,12 @@ public class DatabaseModel {
         }
     }
     
+    public func getDays(from day: Day?) -> String? {
+        return days.first {
+            $0 == day
+        }?.id
+    }
+    
     
 }
 
@@ -320,7 +330,7 @@ public enum ServerError: Error {
     case decodingError
     
     case responseDecodingError
-
+    
     
     var localizedDescription: String {
         switch self {
@@ -341,94 +351,6 @@ public enum ServerError: Error {
         }
     }
     
-    }
-
-
-public struct API {
-    
-    public enum APIRoute {
-        case main
-        case avaibility
-        case checkAuth
-        
-        case debug
-        case simulateError
-        case clearBotHistory
-        case clearAPIHistory
-        case clearError(String)
-        case clearErrors
-        
-        case hostReport
-        case hostReportHistory
-        
-        case login
-        case logout
-        
-        case students
-        case appendStudent
-        case updateStudent
-        case deleteStudent
-        
-        
-        
-    }
-    
-    public enum APIMethod: String {
-        
-        case post = "POST"
-        case get = "GET"
-    }
-
-    
-    var apiRoute: APIRoute
-    
-    var route: String {
-       switch apiRoute {
-       case .main:
-           return ""
-       case .avaibility:
-           return "api/avaibility"
-       case .checkAuth:
-           return "api/check_auth"
-       case .debug:
-           return "api/debug"
-       case .simulateError:
-           return "api/debug/simulate_error"
-       case .clearBotHistory:
-           return "api/debug/clear_bot_history"
-       case .clearAPIHistory:
-           return "api/debug/clear_api_history"
-       case .clearError(let errorPath):
-           return "api/debug/clear_error/\(errorPath)"
-       case .clearErrors:
-           return "api/debug/clear_errors"
-       case .login:
-           return "api/login"
-       case .logout:
-           return "api/logout"
-       case .students:
-           return "data/students"
-       case .appendStudent:
-           return "data/students/append"
-       case .updateStudent:
-           return "data/students/update"
-       case .deleteStudent:
-           return "data/students/delete"
-       case .hostReport:
-           return "api/debug/hostreport"
-       case .hostReportHistory:
-           return "api/debug/hostreport-history"
-       }
-    }
-    
-    var method: APIMethod {
-        switch apiRoute {
-        case .simulateError,.clearErrors,.clearError(_), .clearBotHistory, .clearAPIHistory,.login,.logout, .appendStudent, .updateStudent, .deleteStudent:
-            return .post
-        default:
-            return .get
-        }
-    }
-
-    
 }
+
+

@@ -7,7 +7,15 @@
 
 import Foundation
 
+///La struttura di dati che rappresenta, nell'app, una chiamata al Server.
+///
+///
+///##
+///La documentazione equivalente nel server si trova nel paragrafo <doc:Server###Cronologia-delle-chaimate-API>.
+///
+///
 struct APICallHistoryItem: Codable {
+    
     
     let timestamp: String
     let api: String

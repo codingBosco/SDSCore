@@ -9,7 +9,7 @@ import Foundation
 
 //MARK: Classe
 ///Una classe dell'istituto
-public struct Classe: Identifiable, Codable {
+public struct Classe: SDSEntity {
     
     public var id: String
     

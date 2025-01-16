@@ -9,5 +9,3 @@ La Settimana Dello Studente ha sempre richiesto da parte della lista un quantita
 Per gli organizzatori, rievere le richieste di iscrizione, smistare gli studenti nelle classi, programmare i pacchetti e le conferenze per ogni blocco e classe, indirizzare gli ospiti al loro arrivo e riuscire a fornire la posizione esatta di ogni studente della scuola e in entrambi i plessi non è di certo semplice. È qui che il Framework, in sinergia con il <doc:Server>, il <doc:WebPortal>, il <doc:Bot> e la <doc:SDSKit-App> riesce a coordinare la complessa macchina della SDS in modo più efficiente e meno stancante.
 
 ## Topics
-
-- ``Day``

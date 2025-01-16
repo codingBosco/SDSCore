@@ -8,7 +8,7 @@
 import Foundation
 
 ///Una serie di giorni in sequenza che offrono diversi pacchetti di conferenze
-public struct Tranche: Identifiable, Codable {
+public struct Tranche: SDSEntity {
     
     public var id: String
     
@@ -25,7 +25,7 @@ public struct Tranche: Identifiable, Codable {
         days.count
     }
     
-    init(id: String = UUID().uuidString, formal: String, date: Date, days: [String]) {
+    public init(id: String = UUID().uuidString, formal: String, date: Date, days: [String]) {
         self.id = id
         self.formal = formal
         self.date = date

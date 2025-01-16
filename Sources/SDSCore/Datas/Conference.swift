@@ -8,7 +8,7 @@
 import Foundation
 
 ///Un incontro tra gli studenti del pacchetto in cui è presente e dei relatori.
-public struct Conference: Identifiable, Codable {
+public struct Conference: SDSEntity {
     
     public var id: String
     
