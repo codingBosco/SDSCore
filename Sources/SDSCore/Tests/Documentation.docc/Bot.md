@@ -1,5 +1,9 @@
 # Bot
 
+@Metadata {
+    @PageColor(orange)
+}
+
 Scopri di più sul Bot Telegram per la SDS, realizzato per un rapido accesso al Database dell'organizzazione da qualsiasi dispositivo mobile.
 
 ## Overview

@@ -10,7 +10,8 @@ import Foundation
 //MARK: Student
 ///Una persona che frequenta le classi e partecipa ai pacchetti della SDS
 @DebugDescription
-public struct Student: SDSEntity {
+@Observable
+public final class Student: SDSEntity {
     
     public var id: String
     
@@ -30,12 +31,12 @@ public struct Student: SDSEntity {
     public var isGuardian: [String]
     
     ///Se lo studente tiene una conferenza (o non è disponibile)
-    public var isIgnored: [IgnoredStudentState]
+    public var isIgnored: [StudentException]
     
     ///Gli IDs dei Pacchetti in cui lo studente è moderatore
     public var isModerator: [String]
     
-    public init(id: String = UUID().uuidString, name: String, surname: String, classe: String, attendedPacks: [String], isGuardian: [String], isIgnored: [IgnoredStudentState], isModerator: [String]) {
+    public init(id: String = UUID().uuidString, name: String, surname: String, classe: String, attendedPacks: [String], isGuardian: [String], isIgnored: [StudentException], isModerator: [String]) {
         self.id = id
         self.name = name
         self.surname = surname
@@ -63,14 +64,14 @@ public struct Student: SDSEntity {
         case id
         case name
         case surname
-        case classe
-        case attendedPacks = "attended_packs"
-        case isGuardian = "is_guardian"
-        case isIgnored = "is_ignored"
-        case isModerator = "is_mod"
+        case classe = "classroom"
+        case attendedPacks
+        case isGuardian
+        case isIgnored
+        case isModerator
     }
     
-    public init(from decoder: any Decoder) throws {
+    required public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
         self.name = try container.decode(String.self, forKey: .name)
@@ -78,7 +79,7 @@ public struct Student: SDSEntity {
         self.classe = try container.decode(String.self, forKey: .classe)
         self.attendedPacks = try container.decode([String].self, forKey: .attendedPacks)
         self.isGuardian = try container.decode([String].self, forKey: .isGuardian)
-        self.isIgnored = try container.decode([IgnoredStudentState].self, forKey: .isIgnored)
+        self.isIgnored = try container.decode([StudentException].self, forKey: .isIgnored)
         self.isModerator = try container.decode([String].self, forKey: .isModerator)
     }
     
@@ -86,9 +87,17 @@ public struct Student: SDSEntity {
         "\(name) \(surname) - \(classe)"
     }
     
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    public static func == (lhs: Student, rhs: Student) -> Bool {
+        lhs.id == rhs.id
+    }
+    
 }
 
-public struct IgnoredStudentState: Codable {
+public struct StudentException: Codable, Hashable {
     public let day: String
     
     public var additionalNotes: String
@@ -99,6 +108,14 @@ public struct IgnoredStudentState: Codable {
         self.day = day
         self.additionalNotes = additionalNotes
         self.ignoranceSummary = ignoranceSummary
+    }
+    
+}
+
+extension Student {
+    
+    public static var newStudent: Student {
+        return Student(name: "", surname: "", classe: "", attendedPacks: [], isGuardian: [], isIgnored: [], isModerator: [])
     }
     
 }

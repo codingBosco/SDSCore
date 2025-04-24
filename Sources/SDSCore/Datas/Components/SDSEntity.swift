@@ -9,6 +9,10 @@ import Foundation
 
 public protocol SDSEntity: Identifiable, Codable, Hashable {
     
-    var id: String
+    var id: String { get }
+    
+    func hash(into hasher: inout Hasher)
+    
+    static func == (lhs: Self, rhs: Self) -> Bool
     
 }

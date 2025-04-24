@@ -10,6 +10,7 @@ import Foundation
 ///La rappresentazione dell'utente che ha effettuato l'accesso all'app durante il primo avvio
 public struct Profile: Codable {
 
+
     ///Il nome dell'utente autenticato
     public var username: String
     
@@ -39,7 +40,7 @@ public struct Profile: Codable {
     ///Un elenco delle sessioni attive nel profilo.
     public var activeSessions: [String]
     
-    public init(username: String, secureCode: String, sessionID: String = UUID().uuidString, activeSessions: [String]) {
+    public init(username: String, secureCode: String, sessionID: String, activeSessions: [String]) {
         self.username = username
         self.secureCode = secureCode
         self.sessionID = sessionID
@@ -59,8 +60,7 @@ public struct Profile: Codable {
         self.secureCode = try ct.decode(String.self, forKey: .secureCode)
         self.activeSessions = try ct.decode([String].self, forKey: .activeSessions)
         
-        let sessionID = try ct.decodeIfPresent(String.self, forKey: .sessionID) ?? "INVALID URL - CONTACT SUPPORT"
-        self.sessionID = sessionID
+        self.sessionID = try ct.decode(String.self, forKey: .sessionID)
         
     }
     
@@ -70,6 +70,9 @@ public struct Profile: Codable {
         try ct.encode(username, forKey: .username)
         try ct.encode(secureCode, forKey: .secureCode)
         try ct.encode(activeSessions, forKey: .activeSessions)
+        try ct.encode(sessionID, forKey: .sessionID)
     }
+    
+    
     
 }

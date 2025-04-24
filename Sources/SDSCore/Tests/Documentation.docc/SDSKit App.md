@@ -1,6 +1,6 @@
 # SDSKit App
 
-Scopri di più sull'app, il modo più semplice, veloce e sicuro per organizzare la Settimana dello Studente. Disponibile solo per i dispositivi Apple (iPhone, iPad e Mac)
+Scopri di più sull'app, il modo più semplice e veloce per organizzare la Settimana dello Studente. Disponibile solo per i dispositivi Apple (iPhone, iPad e Mac)
 
 ## Overview
 

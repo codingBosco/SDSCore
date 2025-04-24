@@ -1,12 +1,12 @@
 # Server
 
-Scopri di più sul server che sta dietro alla macchina organizzativa della SDS, imparando ad utilizzare, gestire e ottimizzare ciò che rende disponibile il database a tutti.
+Scopri di più sul server che sta dietro alla macchina organizzativa della SDS.
 
 ## Overview
 
-Il Server è il cuore pulsante dell'organizzazione della Settimana dello Studente. Permette di accedere al Database condiviso, sempre disponibile e modificare da chi ne ha accesso. 
+Il Server è il cuore pulsante dell'organizzazione della Settimana dello Studente. Permette di accedere al database che contiene tutti i dati, fa da host del bot telegram e ospita i file del sito.
 
-In questo articolo vi saranno informazioni utili su come funziona il tutto, dai primi passi nel codice fino al Debug e alla risoluzione di problemi
+In questo articolo vi saranno informazioni utili su come funziona il tutto, dai primi passi nel codice fino al debug e alla risoluzione di problemi
 
 ## La Struttura
 
@@ -16,7 +16,7 @@ In questo articolo vi saranno informazioni utili su come funziona il tutto, dai 
 ### Crea un nuovo profilo di accesso
 Per aumentare la sicurezza del Server e prevenire accessi indesiderati, la procedura di creazione di un nuovo account si può effettuare esclusivamente dal terminale della macchina che sta ospitando il Server stesso. 
 
-Ad esempio, se per una prova, si avvia il server da un Computer fisso, per creare un nuovo account sarà necessario avviare il Terminale (o Prompt dei Comandi PowerShell), del Computer fisso e, attraverso riga di comandi.
+Ad esempio, se si avvia il server da un Computer fisso, per creare un nuovo account sarà necessario avviare il Prompt dei Comandi (o PowerShell), 
 
 ### Codici di Riferimento per le sessioni
 Una volta effettuato l'accesso al profilo, il Server aggiungerà l'ID della sessione nella lista apposita. (Vai a <doc:Profile/sessionID> per l'app e <doc:Server##API-di-Login> per il Server.)
@@ -24,7 +24,7 @@ Una volta effettuato l'accesso al profilo, il Server aggiungerà l'ID della sess
 ## Gestione dei Dati
 
 ## Elenco API
-Il server 
+Il server mette a disposizioni dei "percorsi" che conducono ad una certa azione nel database. Le API sono 
 
 ### Percorso principale
 ddddejdjwiqjdiqjwiodjqiwdjiqw
@@ -34,7 +34,7 @@ wqdwqhdioqwj
 ### Stato del server
 Puoi richiedere l'attuale disponibilità del server e relative informazioni eseguendo la richiesta `GET` al percorso 
 ```html
-http://<ip>:<port>/api/avaibility
+http://<ip>:<port>/api/availability
 ```
 
 Una volta effettuata la richiesta, verrà richiamata la funzione 

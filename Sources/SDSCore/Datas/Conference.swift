@@ -8,7 +8,8 @@
 import Foundation
 
 ///Un incontro tra gli studenti del pacchetto in cui è presente e dei relatori.
-public struct Conference: SDSEntity {
+@Observable
+public final class Conference: SDSEntity {
     
     public var id: String
     
@@ -38,6 +39,23 @@ public struct Conference: SDSEntity {
         self.usefulContacts = usefulContacts
         self.isExternal = isExternal
         self.externalNotes = externalNotes
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    public static func == (lhs: Conference, rhs: Conference) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    
+}
+
+extension Conference {
+    
+    public static var newConference: Conference {
+        return Conference(title: "", abstract: "", isOnline: false, attendences: [], usefulContacts: [], isExternal: false, externalNotes: "")
     }
     
 }
