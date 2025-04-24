@@ -6,12 +6,14 @@
 //
 
 import Foundation
+import Combine
 
 @Observable
 ///La classe principale del Database Locale della SDS, contenente i dati caricati e le chiamate API al server custom, avviato dall'organizzazione.
 ///
 ///``Profile``
 ///
+
 public class SDSLDBModel {
     
     public init(
@@ -113,39 +115,101 @@ public class SDSLDBModel {
         print(responseString)
     }
     
-    public func get<T: Decodable>(_ api: API) async -> T? {
-        
-        let url = URL(string: "http://localhost:3000/\(api.route)")
+    public enum ResultData<T> {
+        case item(T)
+        case array([T])
+    }
+    
+    public func get<T: Decodable>(_ api: API) async -> ResultData<T>? {
         
         do {
             
-            guard let url = url else {
-                throw URLError(.badURL, userInfo: [NSLocalizedDescriptionKey: "Invalid URL: \(String(describing: url))"])
-            }
-            
-            var request = URLRequest(url: url)
-            
-            request.httpMethod = api.method.rawValue
-            
-            let (data, urlResponse) = try await URLSession.shared.data(for: request)
-            
-            guard let response = urlResponse as? HTTPURLResponse else {
+            guard let url = URL(string: "http://localhost:3000/\(api.route)") else {
+                passError("Invalid URL")
                 throw ServerError.invalidURL
             }
             
-            if response.statusCode == 500 {
-                throw ServerError.invalidData
+            var request = URLRequest(url: url)
+            request.httpMethod = api.method.rawValue
+            
+            let (data, resp) = try await URLSession.shared.data(for: request)
+            
+            guard let response = resp as? HTTPURLResponse else {
+                passError("Invalid response")
+                throw ServerError.invalidResponse
             }
             
+            guard (200...299).contains(response.statusCode) else {
+                passError("Server error: \(response.statusCode)")
+                return nil
+            }
             
-            return (data as? T)
+            let decoder = JSONDecoder()
             
+            do {
+                let arrayResults = try decoder.decode([T].self, from: data)
+                return .array(arrayResults)
+            } catch let error as DecodingError {
+                if case .typeMismatch = error {
+                    
+                    do {
+                        let item = try decoder.decode(T.self, from: data)
+                        return .item(item)
+                    } catch {
+                        passError("Error in decodign single file, \(error)")
+                        throw ServerError.decodingError
+                    }
+                    
+                } else {
+                    passError("Error in decoding some file, \(error)")
+                    throw ServerError.decodingError
+                }
+        
+            } catch {
+                passError("Error in decoding array file: \(error)")
+                throw ServerError.decodingError
+            }
+            
+        } catch let urlError as URLError {
+            passError("URL ERROR: \(urlError)")
+            return nil
         } catch {
-            // Log or handle the error as needed
-            passError("\(error.localizedDescription), \(error)")
-            
+            passError("Error in get: \(error)")
             return nil
         }
+        
+        
+        
+//
+//        do {
+//            
+//            guard let url = url else {
+//                throw URLError(.badURL, userInfo: [NSLocalizedDescriptionKey: "Invalid URL: \(String(describing: url))"])
+//            }
+//            
+//            var request = URLRequest(url: url)
+//            
+//            request.httpMethod = api.method.rawValue
+//            
+//            let (data, urlResponse) = try await URLSession.shared.data(for: request)
+//            
+//            guard let response = urlResponse as? HTTPURLResponse else {
+//                throw ServerError.invalidURL
+//            }
+//            
+//            if response.statusCode == 500 {
+//                throw ServerError.invalidData
+//            }
+//            
+//            
+//            return (data as? T)
+//            
+//        } catch {
+//            // Log or handle the error as needed
+//            passError("\(error.localizedDescription), \(error)")
+//            
+//            return nil
+//        }
 
     }
     
@@ -250,40 +314,38 @@ public class SDSLDBModel {
         }
     }
     
-    ///Aggiungi un qualsiasi elemento 
-    public func append<T: Decodable, E: Codable>(_ api: API, with body: E) async -> T? {
+    public var cancellables = Set<AnyCancellable>()
+    let url = "http://localhost:3000/"
+    
+    ///Request single file from the server
+    public func request<T: SDSEntity>(api: API, with body: T? = nil) -> AnyPublisher<[T], Error> {
         
-        let url = URL(string: "http://localhost:3000/\(api.route)")
-        
-        do {
-            guard let url = url else {
-                throw URLError(.badURL, userInfo: [NSLocalizedDescriptionKey: "Invalid URL: \(String(describing: url))"])
-            }
-            
-            var request = URLRequest(url: url)
-            request.httpMethod = api.method.rawValue
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            //login cookies
-            let sessionCookie = "sessionID="
-            
-            let encoder = JSONEncoder()
-            let data = try encoder.encode(body)
-            
-            request.httpBody = data
-            
-            let (serverData, urlResponse) = try await URLSession.shared.data(for: request)
-            guard urlResponse is HTTPURLResponse else {
-                throw ServerError.invalidResponse
-            }
-            
-            return (serverData as? T)
-            
-        } catch {
-            passError("\(error.localizedDescription), \(error)")
-            return nil
+        guard let url = URL(string: url + api.route) else {
+            return Fail(error: URLError(.badURL, userInfo: [NSLocalizedDescriptionKey: "Error in URL"])).eraseToAnyPublisher()
+                
         }
         
+        var request = URLRequest(url: url)
+        request.httpMethod = api.method.rawValue
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let body = body {
+            do {
+                request.httpBody = try JSONEncoder().encode(body)
+            } catch {
+                return Fail(error: ServerError.invalidData)
+                    .eraseToAnyPublisher()
+            }
+        }
+        
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .map { datas -> Data in
+                return datas.data
+            }
+            .decode(type: [T].self, decoder: JSONDecoder())
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+      
     }
     
     
