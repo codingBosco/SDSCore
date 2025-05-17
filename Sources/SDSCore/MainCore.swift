@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import UIKit
 
 public enum AuthState {
     
@@ -18,19 +19,15 @@ public enum AuthState {
 }
 
 @Observable
-///La classe principale del Database Locale della SDS, contenente i dati caricati e le chiamate API al server custom, avviato dall'organizzazione.
+///La classe principale del Server della SDS, contenente i dati caricati e le chiamate API al server custom, avviato dall'organizzazione.
 ///
 ///``Profile``
 ///
-public class ServerCore {
+public class MainCore {
     
-    public init() {
-        
-        
-        
-    }
+    public init() { }
     
-    
+
     ///When true, the AppStorage persistent value "canTryLoginFirst" is resetted to true and the session will be initialized.
     public var shouldRecheckLogin = false
     
@@ -63,11 +60,15 @@ public class ServerCore {
     public var showError: Bool = false
     public var errorMessage: String = ""
     
-    
     public var serverURL = "http://192.168.1.112:3000"
+    public var socketURL = "ws://192.168.1.112:3000"
     
     public var isConnected = false
+    public var isWebSocketConnected = false
     public let serverCheckTimer = Timer.publish(every: 20, on: .main, in: .common).autoconnect()
+    
+    private var webSocketTask: URLSessionWebSocketTask?
+    
     
     public var cancellables = Set<AnyCancellable>()
     
@@ -324,11 +325,74 @@ public class ServerCore {
         }?.id
     }
     
+    func connectToSocket() async {
+        do {
+            let socketSessions = URLSession(configuration: .default)
+            guard let url = URL(string: socketURL) else {
+                print("Incorrect URL for web Socket")
+                throw ServerError.invalidURL
+            }
+            webSocketTask = socketSessions.webSocketTask(with: url)
+            
+            webSocketTask?.resume()
+            isWebSocketConnected = true
+            try await self.receiveFromSocket()
+           
+            
+        } catch {
+            print("Error in webSocket Connection: \(error)")
+        }
+    }
+    
+    func disconnectFromSocket(with closing: URLSessionWebSocketTask.CloseCode = .normalClosure, reasonData: Data? = nil ) {
+        webSocketTask?.cancel(with: closing, reason: reasonData)
+        isWebSocketConnected = false
+    }
+    
+    func sendToSocket(_ message: String) {
+        let message = URLSessionWebSocketTask.Message.string(message)
+        webSocketTask?.send(message) { error in
+            if let error = error {
+                print("Error sending message: \(error)")
+            }
+            print("sended!")
+        }
+    }
+    
+    func sendToSocket(with payload: Payload) async {
+        do {
+            let data = try JSONEncoder().encode(payload)
+            let message = URLSessionWebSocketTask.Message.data(data)
+            try await webSocketTask?.send(message)
+        } catch {
+            print("Error in sending payload: \(payload)")
+        }
+    }
+    
+    func receiveFromSocket() async throws {
+        let response = try await webSocketTask?.receive()
+        switch response {
+        case .data(let data):
+            print("[WEBSOCKET]: Received Data: \(String(data: data, encoding: .utf8))")
+        case .string(let string):
+            print("[WEBSOCKET]: Received Message: \(string)")
+        case .none:
+            print("Error in reaving")
+        @unknown default:
+            throw ServerError.unknownSocketResponse
+        }
+    }
+    
     public func checkConnection() async {
         await get(.routeTo(.avaibility), for: Response.self) { response in
             if response.result == "success" {
                 self.isConnected = true
+               
             }
+        }
+        
+        if !isWebSocketConnected {
+            await connectToSocket()
         }
     }
     
@@ -400,6 +464,143 @@ public class ServerCore {
             }.store(in: &cancellables)
     }
     
+    
+    
+    
+    //MARK: Local Functions
+    
+    private static var localDocumentDirectory: URL {
+        do {
+            return try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+        } catch {
+            fatalError("Couldn't get document directory, error: \(error.localizedDescription)")
+        }
+    }
+    
+    private static var tranchesFile: URL {
+        return localDocumentDirectory.appendingPathComponent("tranches.data")
+    }
+    
+    private static var packsFile: URL {
+        return localDocumentDirectory.appendingPathComponent("packs.data")
+    }
+    
+    private static var classesFile: URL {
+        return localDocumentDirectory.appendingPathComponent("classes.data")
+    }
+    
+    private static var conferencesFile: URL {
+        return localDocumentDirectory.appendingPathComponent("conferences.data")
+    }
+    
+    private static var studentsFile: URL {
+        return localDocumentDirectory.appendingPathComponent("students.data")
+    }
+    
+    private static var daysFile: URL {
+        return localDocumentDirectory.appendingPathComponent("days.data")
+    }
+    
+    public func localLoadAll() async {
+        do {
+            try await students = localLoad(itemType: .students)
+            try await classes = localLoad(itemType: .classes)
+            try await tranches = localLoad(itemType: .tranche)
+            try await conferences = localLoad(itemType: .conferences)
+            try await days = localLoad(itemType: .days)
+            try await packs = localLoad(itemType: .packs)
+        } catch {
+            print("Couldn't load: \(error)")
+        }
+    }
+    
+    public func localSaveAll() async throws {
+        try await localSave(items: students, for: .students)
+        try await localSave(items: packs, for: .packs)
+        try await localSave(items: conferences, for: .conferences)
+        try await localSave(items: days, for: .days)
+        try await localSave(items: classes, for: .classes)
+        try await localSave(items: tranches, for: .tranche)
+    }
+    
+    public func localSave<T: SDSEntity>(items: [T], for itemType: ItemEntity, inFile: String) async throws {
+        do {
+            let data = try JSONEncoder().encode(items)
+            let output = MainCore.localDocumentDirectory.appendingPathComponent("\(inFile).data")
+            try data.write(to: output)
+        } catch {
+            print("Could't save the files")
+        }
+    }
+    
+    public func localLoad<T: SDSEntity>(from fileName: String, itemType: ItemEntity) async throws -> [T] {
+        do {
+            guard let data = try? Data(contentsOf: MainCore.localDocumentDirectory.appendingPathComponent("\(fileName).data")) else {
+                throw ServerError.decodingError
+            }
+            
+            let items = try JSONDecoder().decode([T].self, from: data)
+            return items
+        } catch {
+            print("Couldn't load students, due to: \(error.localizedDescription)")
+            return []
+        }
+    }
+    
+    public func localLoad<T: SDSEntity>(itemType: ItemEntity) async throws -> [T] {
+        do {
+            guard let data = try? Data(contentsOf: itemType.directoryURL) else {
+                throw ServerError.decodingError
+            }
+            
+            let items = try JSONDecoder().decode([T].self, from: data)
+            return items
+        } catch {
+            print("Couldn't load students, due to: \(error.localizedDescription)")
+            return []
+        }
+    }
+    
+    public func localSave<T: SDSEntity>(items: [T], for itemType: ItemEntity) async throws {
+        do {
+            let data = try JSONEncoder().encode(items)
+            let output = itemType.directoryURL
+            try data.write(to: output)
+            
+            print("saved in \(output)")
+            
+        } catch {
+            print("Could't save the files")
+        }
+    }
+    
+    public enum ItemEntity: String, CaseIterable {
+        case tranche
+        case packs
+        case classes
+        case conferences
+        case students
+        case days
+        
+        var directoryURL: URL {
+            switch self {
+            case .tranche:
+                return tranchesFile
+            case .packs:
+                return packsFile
+            case .classes:
+                return classesFile
+            case .conferences:
+                return conferencesFile
+            case .students:
+                return studentsFile
+            case .days:
+                return daysFile
+            }
+        }
+        
+    }
+    
 }
 
 public enum ServerError: Error {
@@ -416,6 +617,8 @@ public enum ServerError: Error {
     case invalidServerResource
     
     case userNotFound
+    
+    case unknownSocketResponse
     
     
     var localizedDescription: String {
@@ -438,6 +641,8 @@ public enum ServerError: Error {
             return String(localized: "Server Route not found, maybe the URL of the request is changed in the server or it was to write correctly", comment: "String for ther error 404 in login API")
         case .userNotFound:
             return "User not found"
+        case .unknownSocketResponse:
+            return "Unknwon response from the socket"
         }
     }
     
@@ -485,4 +690,136 @@ public struct Response: Codable, Sendable {
     public let result: String
     public let message: String
     
+}
+
+
+public struct Payload: Codable {
+    
+    public let payloadID: String
+    public let from: String
+    public let action: PayloadAction
+    //TODO: Change targetClass to a enum
+    public let targetClass: String
+    public let targetID: String
+    public let interpolators: [PayloadInterpolator]
+    
+    public nonisolated init(
+        payloadID: String = "payload_share_\(UUID().uuidString.lowercased())",
+        from: String,
+        action: PayloadAction,
+        targetClass: String,
+        targetID: String,
+        interpolators: [PayloadInterpolator]
+    ) {
+        self.payloadID = payloadID
+        self.from = from
+        self.action = action
+        self.targetClass = targetClass
+        self.targetID = targetID
+        self.interpolators = interpolators
+    }
+    
+    public enum CodingKeys: String, CodingKey {
+        case payloadID
+        case from
+        case action
+        case targetClass
+        case targetID
+        case interpolators
+    }
+    
+    public init(from decoder: any Decoder) throws {
+        let ct = try decoder.container(keyedBy: CodingKeys.self)
+        
+        payloadID = try ct.decode(String.self, forKey: .payloadID)
+        from = try ct.decode(String.self, forKey: .from)
+        action = try ct.decode(PayloadAction.self, forKey: .action)
+        targetClass = try ct.decode(String.self, forKey: .targetClass)
+        targetID = try ct.decode(String.self, forKey: .targetID)
+        interpolators = try ct.decode([PayloadInterpolator].self, forKey: .interpolators)
+        
+    }
+    
+    public func encode(to encoder: any Encoder) throws {
+        var ct = encoder.container(keyedBy: CodingKeys.self)
+        
+        try ct.encode(payloadID, forKey: .payloadID)
+        try ct.encode(from, forKey: .from)
+        try ct.encode(action, forKey: .action)
+        try ct.encode(targetClass, forKey: .targetClass)
+        try ct.encode(targetID, forKey: .targetID)
+        try ct.encode(interpolators, forKey: .interpolators)
+        
+    }
+    
+}
+
+extension Payload {
+    public struct PayloadInterpolator: Codable {
+        
+        public var field: String
+        public var updatedValue: AnyCodable
+
+    }
+}
+
+
+public enum PayloadAction: String, Codable {
+    case add = "ADD"
+    case update = "UPDATE"
+    case remove = "REMOVE"
+}
+
+public struct AnyCodable: Codable {
+    public let value: Any
+    
+    public init(_ value: Any) {
+        self.value = value
+    }
+    
+    public init(from decoder: any Decoder) throws {
+        let ct = try decoder.singleValueContainer()
+        
+        if let int = try? ct.decode(Int.self) {
+            self.value = int
+        } else if let doubleVal = try? ct.decode(Double.self) {
+            self.value = doubleVal
+        } else if let boolVal = try? ct.decode(Bool.self) {
+            self.value = boolVal
+        } else if let stringVal = try? ct.decode(String.self) {
+            self.value = stringVal
+        } else if let dict = try? ct.decode([String: AnyCodable].self) {
+            self.value = dict.mapValues { $0.value }
+        } else if let array = try? ct.decode([AnyCodable].self) {
+            self.value = array.map { $0.value }
+        } else if let date = try? ct.decode(Date.self) {
+            self.value = date
+        }
+        else {
+            throw DecodingError.dataCorruptedError(in: ct, debugDescription: "Tipo non supportato")
+        }
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+            var ct = encoder.singleValueContainer()
+
+            switch value {
+            case let intVal as Int:
+                try ct.encode(intVal)
+            case let doubleVal as Double:
+                try ct.encode(doubleVal)
+            case let boolVal as Bool:
+                try ct.encode(boolVal)
+            case let stringVal as String:
+                try ct.encode(stringVal)
+            case let dict as [String: Any]:
+                try ct.encode(dict.mapValues { AnyCodable($0) })
+            case let array as [Any]:
+                try ct.encode(array.map { AnyCodable($0) })
+            case let date as Date:
+                try ct.encode(date)
+            default:
+                throw EncodingError.invalidValue(value, .init(codingPath: ct.codingPath, debugDescription: "Tipo non supportato"))
+            }
+        }
 }

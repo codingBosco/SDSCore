@@ -1,4 +1,4 @@
-# SDS MicroGarden
+# SDS Ambient Garden
 
 @Metadata {
     @PageImage(

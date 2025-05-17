@@ -52,6 +52,8 @@ app.get('/api/avaibility', (req, res) => { ... } )
 
 ### Requisiti minimi e Compatibilità del Server
 
+### Cronologia delle chaimate API
+
 
 ### Report e Cronologia errori
 In caso si verifichino errori nel codice del Server o si inseriscano strutture di dati 

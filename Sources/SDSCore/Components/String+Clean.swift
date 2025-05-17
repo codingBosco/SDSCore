@@ -7,6 +7,7 @@
 
 import Foundation
 
+//TODO: Better manage of file handling
 extension String {
     
     public func cleaned() -> String {

@@ -1,6 +1,6 @@
 @Tutorial(time: 2) {
     @Intro(title: "Aggiungi un nuovo utente autorizzato") {
-        Permetti ad altre persone di accedere al database attraverso l'app, il Bot Telegram o il WebPortal. Segui il tutorial più adatto al tuo sistema operativo (Mac, Windows o Linux)
+        Permetti ad altre persone di accedere al database del Server attraverso l'App o il WebPortal. Segui il tutorial più adatto al tuo sistema operativo (Mac, Windows o Linux)
         
         @Image(source: "login_tutorial_banner.png", alt: "ciao")
     }
@@ -27,7 +27,7 @@
         }
     }
     
-    @Section(title: "Aggiungi un nuovo Utente - Windows") {
+    @Section(title: "Aggiungi un nuovo Utente - Windows (Windows 10/11)") {
         @ContentAndMedia {
             Segui il tutorial per computer che utilizzano Windows (disponibile su: Windows 10, 11)
             

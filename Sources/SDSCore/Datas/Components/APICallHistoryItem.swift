@@ -11,7 +11,7 @@ import Foundation
 ///
 ///
 ///##
-///La documentazione equivalente nel server si trova nel paragrafo <doc:Server###Cronologia-delle-chaimate-API>.
+///La documentazione equivalente nel server si trova nel paragrafo <doc:Server###Cronologia-delle-chaimate-API>
 ///
 ///
 struct APICallHistoryItem: Codable {

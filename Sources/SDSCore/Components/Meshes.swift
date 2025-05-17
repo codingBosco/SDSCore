@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+//TODO: Move to App
 public struct StudentBackgroundMesh1 {
     let width: Int = 5
     let height: Int = 5

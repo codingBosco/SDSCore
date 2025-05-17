@@ -13,6 +13,7 @@ import NaturalLanguage
 @available(macOS 14.0, *)
 
 @Observable
+//TODO: To rename to QueryCore
 public class QueryModel {
     
     ///La ricerca effettuata dall'utente.
@@ -92,3 +93,4 @@ public class QueryModel {
     }
     
 }
+
