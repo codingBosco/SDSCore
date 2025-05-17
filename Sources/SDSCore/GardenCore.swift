@@ -204,7 +204,7 @@ extension GardenCore: @preconcurrency MCSessionDelegate {
         if let error = error {
             print("Error in receiving resources stream \(resourceName) from \(peerID.displayName) with error: \(error.localizedDescription)")
         } else {
-            print("Finished reeiving resources \(resourceName) from \(peerID.displayName) located at \(localURL)")
+            print("Finished reeiving resources \(resourceName) from \(peerID.displayName) located at \(String(describing: localURL))")
         }
     }
     

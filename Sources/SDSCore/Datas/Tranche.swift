@@ -49,7 +49,7 @@ public final class Tranche: SDSEntity {
     }
     
     public func encode(to encoder: any Encoder) throws {
-        var ct = try encoder.container(keyedBy: CodingKeys.self)
+        var ct = encoder.container(keyedBy: CodingKeys.self)
         
         try ct.encode(id, forKey: .id)
         try ct.encode(formal, forKey: .formal)
@@ -59,7 +59,7 @@ public final class Tranche: SDSEntity {
     }
     
     public init(from decoder: any Decoder) throws {
-        var ct = try decoder.container(keyedBy: CodingKeys.self)
+        let ct = try decoder.container(keyedBy: CodingKeys.self)
         
         id = try ct.decode(String.self, forKey: .id)
         formal = try ct.decode(String.self, forKey: .formal)

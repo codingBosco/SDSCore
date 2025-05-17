@@ -109,7 +109,7 @@ public class MainCore {
                     throw URLError(.badServerResponse)
                 }
                 
-                print("ENCODED DATA: \(String(data: encodedBody, encoding: .utf8))")
+                print("ENCODED DATA: \(String(data: encodedBody, encoding: .utf8) ?? "ERROR ENCODED DATA")")
                 return String(data: $0.data, encoding: .utf8) ?? "error in response"
             }
             .receive(on: DispatchQueue.main)
@@ -216,7 +216,7 @@ public class MainCore {
             request.httpMethod = api.method.rawValue
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
            
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (_, response) = try await URLSession.shared.data(for: request)
 
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 completionHandler()
@@ -291,7 +291,7 @@ public class MainCore {
             request.httpMethod = "GET"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             
-            let (profileData, response) = try await URLSession.shared.data(for: request)
+            let (_, response) = try await URLSession.shared.data(for: request)
             if let statusResponse = response as? HTTPURLResponse {
                 switch statusResponse.statusCode {
                     
@@ -372,7 +372,7 @@ public class MainCore {
         let response = try await webSocketTask?.receive()
         switch response {
         case .data(let data):
-            print("[WEBSOCKET]: Received Data: \(String(data: data, encoding: .utf8))")
+            print("[WEBSOCKET]: Received Data: \(String(describing: String(data: data, encoding: .utf8)))")
         case .string(let string):
             print("[WEBSOCKET]: Received Message: \(string)")
         case .none:

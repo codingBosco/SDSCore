@@ -159,9 +159,9 @@ public struct API: Sendable {
        case .appendClass:
            return "data/classrooms/append"
            //TODO: Aggiungere qui
-       case .deleteClass(let classroom):
+       case .deleteClass(_):
            return ""
-       case .updateClass(let classroom):
+       case .updateClass(_):
            return ""
            
        case .generateDiagnosticFile:
