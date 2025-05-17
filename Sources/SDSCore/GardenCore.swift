@@ -8,11 +8,25 @@
 import Foundation
 import MultipeerConnectivity
 import NearbyInteraction
-import UIKit
 import SwiftUI
 
 
-public struct GardenPeerError: Error {
+public enum GardenPeerError: Error {
+    
+    case invalidConnection
+    case sendingError(String)
+    case error(String)
+    
+    var localizedDescription: String {
+        switch self {
+        case .invalidConnection:
+            return "Invalid connection attempt"
+        case .error(let error):
+            return "Error in GardenCoreRuntime: \(error)"
+        case .sendingError(let description):
+            return "Error in sending the message to the connected peer with error: \(description)"
+        }
+    }
     
 }
 
@@ -87,7 +101,11 @@ public final class GardenCore: NSObject {
     var advAssistant: MCAdvertiserAssistant!
     
     public func setupStart() {
+        #if os(macOS)
+        self.deviceID = MCPeerID(displayName: "mac_sds_device_\(UUID().uuidString.lowercased())")
+        #elseif os(iOS)
         self.deviceID = MCPeerID(displayName: "\(UIDevice.current.name)_sds_device_\(UUID().uuidString.lowercased())")
+        #endif
         
         guard let deviceID else {
             return
@@ -130,11 +148,19 @@ public final class GardenCore: NSObject {
 
 extension GardenCore: @preconcurrency MCBrowserViewControllerDelegate {
     public func browserViewControllerDidFinish(_ browserViewController: MCBrowserViewController) {
+#if os(iOS)
         browserViewController.dismiss(animated: true, completion: nil)
+#elseif os(macOS)
+        browserViewController.dismiss(self)
+#endif
     }
     
     public func browserViewControllerWasCancelled(_ browserViewController: MCBrowserViewController) {
+#if os(iOS)
         browserViewController.dismiss(animated: true)
+#elseif os(macOS)
+        browserViewController.dismiss(self)
+#endif
     }
     
 }

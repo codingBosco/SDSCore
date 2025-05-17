@@ -16,9 +16,7 @@ public class FileHandler {
     
     public var fileSubscription: [Subscription] = []
     
-    public init() {
-        
-    }
+    public init() { }
     
     public func handleFile(_ result: Result<URL, Error>) async {
         switch result {

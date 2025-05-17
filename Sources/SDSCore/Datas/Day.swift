@@ -19,7 +19,7 @@ public class Day: SDSEntity {
     ///Gli IDs dei pacchetti che si terranno in questo blocco orario
     public var packs: [String]
     
-    public init(id: String, date: Date, packs: [String] = []) {
+    public init(id: String = UUID().uuidString, date: Date, packs: [String] = []) {
         self.id = id
         self.date = date
         self.packs = packs
