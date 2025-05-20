@@ -14,7 +14,7 @@ import NaturalLanguage
 
 @Observable
 //TODO: To rename to QueryCore
-public class QueryModel {
+public class QueryCore {
     
     ///La ricerca effettuata dall'utente.
     ///
@@ -74,21 +74,25 @@ public class QueryModel {
         query = ""
     }
     
-    public func getTags(for string: String) {
+    public func getTags() {
         do {
-            let model = try FinderQueryModelEnchanced(configuration: MLModelConfiguration()).model
-            let predictor = try NLModel(mlModel: model)
+            let model = try SDSQueryAssistant_V1_25I(configuration: MLModelConfiguration()).model
+            let customModel = try NLModel(mlModel: model)
             
-            let predictions = predictor.predictedLabelHypotheses(for: string, maximumCount: 4)
+            let customTagScheme = NLTagScheme("Query Tags Scheme")
+            let tagger = NLTagger(tagSchemes: [.nameType, .lexicalClass, customTagScheme])
+            tagger.string = query
             
-            tags = []
+            tagger.setModels([customModel], forTagScheme: customTagScheme)
             
-            for prediction in predictions {
-                tags.append(prediction.key)
+            tagger.enumerateTags(in: query.startIndex..<query.endIndex, unit: .word, scheme: customTagScheme, options: [.omitWhitespace,.omitPunctuation]) { tag, tokenRange in
+                if let tag = tag {
+                    print("\(query[tokenRange]): \(tag.rawValue)")
+                }
+                return true
             }
-            
         } catch {
-            print("Error in tagging the query: \(error.localizedDescription), \(error)")
+            print("Error in ml: \(error)")
         }
     }
     

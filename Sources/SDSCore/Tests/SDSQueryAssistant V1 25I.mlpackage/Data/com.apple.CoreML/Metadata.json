@@ -1,0 +1,14 @@
+{
+  "MLModelVersionStringKey" : "1.0",
+  "MLModelDescriptionKey" : "Give suggestion of type of data from the text input of a common query in the SDS’s Database",
+  "MLModelCreatorDefinedKey" : {
+    "com.apple.createml.training.finished" : "2025-05-20T14:31:13Z",
+    "com.apple.createml.app.tag" : "151.2",
+    "com.apple.createml.model.created" : "2025-05-20T14:31:13Z",
+    "com.apple.coreml.model.preview.type" : "wordTagger",
+    "com.apple.createml.app.version" : "6.2",
+    "com.apple.createml.training.started" : "2025-05-20T14:31:13Z"
+  },
+  "MLModelAuthorKey" : "Sese",
+  "MLModelLicenseKey" : "--"
+}

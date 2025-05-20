@@ -7,7 +7,6 @@
 
 import Foundation
 
-
 enum Block: String, Identifiable, CaseIterable, Codable {
     case first
     case second

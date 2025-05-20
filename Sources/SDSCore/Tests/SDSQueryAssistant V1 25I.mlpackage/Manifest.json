@@ -1,0 +1,24 @@
+{
+    "fileFormatVersion": "1.0.0",
+    "itemInfoEntries": {
+        "154D85A6-FE73-45C1-BDFE-CCAA44DED72E": {
+            "author": "com.apple.CoreML",
+            "description": "External FeatureDescription Overlay",
+            "name": "FeatureDescriptions.json",
+            "path": "com.apple.CoreML/FeatureDescriptions.json"
+        },
+        "200503F1-DF12-4742-9F06-9D507A69E7FB": {
+            "author": "com.apple.CoreML",
+            "description": "CoreML Model Specification",
+            "name": "SDSQueryAssistant V1 25I.mlmodel",
+            "path": "com.apple.CoreML/SDSQueryAssistant V1 25I.mlmodel"
+        },
+        "266064DA-BB0C-4CD4-BA37-9EDE418AB5A6": {
+            "author": "com.apple.CoreML",
+            "description": "External Metadata Overlay",
+            "name": "Metadata.json",
+            "path": "com.apple.CoreML/Metadata.json"
+        }
+    },
+    "rootModelIdentifier": "200503F1-DF12-4742-9F06-9D507A69E7FB"
+}
