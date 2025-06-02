@@ -74,7 +74,10 @@ public class QueryCore {
         query = ""
     }
     
-    public func getTags() {
+    public func getTags() -> [Substring: String]? {
+        
+        var tags : [Substring: String] = [:]
+        
         do {
             let model = try SDSQueryAssistant_V1_25I(configuration: MLModelConfiguration()).model
             let customModel = try NLModel(mlModel: model)
@@ -87,13 +90,20 @@ public class QueryCore {
             
             tagger.enumerateTags(in: query.startIndex..<query.endIndex, unit: .word, scheme: customTagScheme, options: [.omitWhitespace,.omitPunctuation]) { tag, tokenRange in
                 if let tag = tag {
-                    print("\(query[tokenRange]): \(tag.rawValue)")
+                    tags = [query[tokenRange] : tag.rawValue]
                 }
-                return true
+                
+               return true
             }
+            
+            return tags
+            
         } catch {
             print("Error in ml: \(error)")
+            return nil
         }
+        
+        return tags
     }
     
 }

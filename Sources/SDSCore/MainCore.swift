@@ -59,8 +59,8 @@ public class MainCore {
     public var showError: Bool = false
     public var errorMessage: String = ""
     
-    public var serverURL = "http://192.168.1.112:3000"
-    public var socketURL = "ws://192.168.1.112:3000"
+    public var serverURL = "http://localhost:3000"
+    public var socketURL = "ws://localhost:3000"
     
     public var isConnected = false
     public var isWebSocketConnected = false
@@ -298,6 +298,8 @@ public class MainCore {
                 case 200:
                     print("Logged")
                     profile = Profile(username: username, secureCode: "", sessionID: sessionID, activeSessions: [])
+                    
+                    //TODO: Save the Server's URL Address
                     
                 default:
                     throw ServerError.invalidResponse
