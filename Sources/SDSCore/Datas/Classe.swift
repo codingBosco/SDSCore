@@ -10,7 +10,7 @@ import Foundation
 //MARK: Classe
 ///Una classe dell'istituto
 @Observable
-public class Classe: SDSEntity {
+public class Classe: SDSEntity, @unchecked Sendable {
     
     public var id: String
     
@@ -110,3 +110,4 @@ extension Classe {
     }
     
 }
+

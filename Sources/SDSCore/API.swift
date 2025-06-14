@@ -145,7 +145,7 @@ public struct API: Sendable {
            return "api/logout"
            
        case .students:
-           return "data/students"
+           return "data/students/"
        case .appendStudent:
            return "data/students/append"
        case .updateStudent(let studentID):

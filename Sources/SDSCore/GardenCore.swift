@@ -186,27 +186,28 @@ public final class GardenCore: NSObject {
             return
         }
 
-
+        // Rimuovi vecchi servizi se presenti (buona pratica durante lo sviluppo)
         peripheralManager.removeAllServices()
 
         let mutableCharacteristic = CBMutableCharacteristic(
             type: characteristicUUID,
-            properties: [.read, .write, .notify, .writeWithoutResponse],
+            properties: [.read, .write, .notify], // Scegli le proprietà necessarie
             value: nil,
-            permissions: [.readable, .writeable, .writeEncryptionRequired]
+            permissions: [.readable, .writeable] // Scegli i permessi necessari
         )
-        self.transferCharacteristic = mutableCharacteristic
+        self.transferCharacteristic = mutableCharacteristic // Salva la caratteristica per uso futuro
 
         let service = CBMutableService(type: serviceUUID, primary: true)
         service.characteristics = [mutableCharacteristic]
 
         peripheralManager.add(service)
+        print("Service and characteristic defined for peripheral.")
     }
 
     public func startAdvertising() {
         guard peripheralManager.state == .poweredOn else {
             print("Peripheral Manager not powered on. Cannot start advertising.")
-           
+            // Potresti mettere in coda l'advertising per quando sarà poweredOn
             return
         }
         
@@ -237,6 +238,7 @@ public final class GardenCore: NSObject {
 
     public func stopAdvertising() {
         if peripheralManager.isAdvertising {
+            print("Stopping advertising.")
             peripheralManager.stopAdvertising()
         }
     }
@@ -249,20 +251,25 @@ public final class GardenCore: NSObject {
             return
         }
 
-        //CENTRAL
+
         if let peripheral = connectedPeripheral, let char = writeCharacteristic {
             print("Sending message as Central: \(message)")
             
-            peripheral.writeValue(data, for: char, type: .withoutResponse)
+            peripheral.writeValue(data, for: char, type: .withResponse)
+            peripheral.writeValue(eomData, for: char, type: .withResponse)
             isSendingData = true
         }
-
-        //PERIPHERAL
+       
+        
         else if !subscribedCentrals.isEmpty, let char = self.transferCharacteristic {
+            print("Sending message as Peripheral to \(subscribedCentrals.count) central(s): \(message)")
             var success = peripheralManager.updateValue(data, for: char, onSubscribedCentrals: nil)
             if !success {
                 print("Failed to send initial data packet as peripheral.")
             }
+            
+            success = peripheralManager.updateValue(eomData, for: char, onSubscribedCentrals: nil)
+            if !success { print("Failed to send EOM as peripheral. Sended to \(connectedPeripheral?.name)") }
             isSendingData = true
         } else {
             print("Cannot send message: No connected peripheral or subscribed central, or characteristic not ready.")
@@ -273,39 +280,52 @@ public final class GardenCore: NSObject {
     
     private func handleReceivedData(_ data: Data) {
 
+        receivedDataBuffer.append(data)
 
-        if let receivedString = String(data: data, encoding: .utf8) {
-            print("Message received: \(receivedString)")
-            
-            
-            #if os(iOS)
-            if receivedString.contains("GARDEN_RESEARCH") && !neabrySessionStarted {
-                let nearbySessionComponents = receivedString.split(separator: "_")
-                    
-                    //Devi rispondere inviando il codice
-                    self.sendDiscoveryToken(as: .response)
-                    
-                
-                //E setta il codice
-                guard let tokenComponent = nearbySessionComponents[3].data(using: .utf8) else {
-                    print("Error in encoding data")
-                    return
-                }
-                self.setupNearbySession()
-                self.startSession(with: tokenComponent)
-                    
-                self.neabrySessionStarted = true
-                
-            }
-            #endif
-            
-            DispatchQueue.main.async {
-                self.isReceivingData = false
-            }
-        } else {
-            print("Error: Could not decode received data to string.")
-        }
         
+        if let eomRange = receivedDataBuffer.range(of: eomData) {
+            let messageData = receivedDataBuffer.subdata(in: receivedDataBuffer.startIndex..<eomRange.lowerBound)
+            if let receivedString = String(data: messageData, encoding: .utf8) {
+                print("Message received: \(receivedString)")
+                
+                message = receivedString
+                
+                #if os(iOS)
+                if receivedString.contains("GARDEN_RESEARCH") && !neabrySessionStarted {
+                    let nearbySessionComponents = receivedString.split(separator: "_")
+                        
+                        //Devi rispondere inviando il codice
+                        self.sendDiscoveryToken(as: .response)
+                        
+                    
+                    //E setta il codice
+                    guard let tokenComponent = nearbySessionComponents[3].data(using: .utf8) else {
+                        print("Error in encoding data")
+                        return
+                    }
+                    self.setupNearbySession()
+                    self.startSession(with: tokenComponent)
+                        
+                    self.neabrySessionStarted = true
+                    
+                }
+                #endif
+                
+                DispatchQueue.main.async {
+                    self.isReceivingData = false
+                }
+            } else {
+                print("Error: Could not decode received data to string.")
+            }
+            
+            receivedDataBuffer.removeSubrange(receivedDataBuffer.startIndex...eomRange.upperBound - 1)
+        } else {
+           
+            print("Received data chunk, waiting for EOM. Buffer size: \(receivedDataBuffer.count)")
+            DispatchQueue.main.async {
+                self.isReceivingData = true // Aggiorna UI
+            }
+        }
     }
     
     
@@ -374,7 +394,7 @@ extension GardenCore: @preconcurrency CBCentralManagerDelegate {
 
     public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         print("Failed to connect to peripheral: \(peripheral.name ?? "Unknown"). Error: \(error?.localizedDescription ?? "None")")
-        connectionStatus = "Connessione Fallita"
+        connectionStatus = "Connessione Fallita, \(error?.localizedDescription )"
         if connectedPeripheral?.identifier == peripheral.identifier {
             connectedPeripheral = nil
         }
@@ -399,6 +419,8 @@ extension GardenCore: @preconcurrency CBPeripheralManagerDelegate {
     public func peripheralManagerDidUpdateState(_ peripheralManager: CBPeripheralManager) {
         switch peripheralManager.state {
         case .poweredOn:
+            print("Peripheral Manager is powered on.")
+            // Ora puoi aggiungere il servizio e iniziare l'advertising
             setupPeripheralService()
         case .poweredOff:
             print("Peripheral Manager is powered off.")
@@ -439,9 +461,7 @@ extension GardenCore: @preconcurrency CBPeripheralManagerDelegate {
         if !subscribedCentrals.contains(central) {
             subscribedCentrals.append(central)
         }
-        // Puoi inviare un messaggio di benvenuto o dati iniziali qui se necessario
-        // let welcomeMessage = "Welcome, Central!".data(using: .utf8)!
-        // peripheral.updateValue(welcomeMessage, for: self.transferCharacteristic!, onSubscribedCentrals: [central])
+        
     }
 
     public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
@@ -476,8 +496,6 @@ extension GardenCore: @preconcurrency CBPeripheralManagerDelegate {
                 continue
             }
 
-           
-            
             if let data = request.value {
                 
                 handleReceivedData(data)
@@ -499,7 +517,7 @@ extension GardenCore: @preconcurrency CBPeripheralDelegate {
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let error = error {
             print("Error discovering services for peripheral \(peripheral.name ?? "Unknown"): \(error.localizedDescription)")
-            disconnectPeripheral() // Disconnetti se non riesci a scoprire i servizi
+            disconnectPeripheral()
             return
         }
 
@@ -515,7 +533,7 @@ extension GardenCore: @preconcurrency CBPeripheralDelegate {
             if service.uuid == serviceUUID {
                 print("Found our service. Discovering characteristics...")
                 peripheral.discoverCharacteristics([characteristicUUID], for: service)
-                return // Trovato il servizio, esci dal loop
+                return
             }
         }
         print("Our specific service UUID (\(serviceUUID.uuidString)) not found on peripheral \(peripheral.name ?? "Unknown").")
@@ -541,26 +559,26 @@ extension GardenCore: @preconcurrency CBPeripheralDelegate {
             if characteristic.uuid == characteristicUUID {
                 print("Found our characteristic. Properties: \(characteristic.properties)")
                 
-                // Salva la caratteristica per la scrittura
+               
                 if characteristic.properties.contains(.write) || characteristic.properties.contains(.writeWithoutResponse) {
                     self.writeCharacteristic = characteristic
                     print("Characteristic saved for writing.")
                 }
                 
-                // Sottoscrivi alle notifiche se la caratteristica le supporta
+                
                 if characteristic.properties.contains(.notify) {
                     print("Subscribing to notifications for characteristic...")
                     peripheral.setNotifyValue(true, for: characteristic)
                 }
                 
-                // Se la caratteristica è anche leggibile, potresti voler leggere il suo valore iniziale
+                
                 if characteristic.properties.contains(.read) {
                     print("Reading initial value for characteristic...")
                     peripheral.readValue(for: characteristic)
                 }
                 
                 connectionStatus = "Ready to chat with \(peripheral.name ?? "device")"
-                return // Trovata la caratteristica, esci dal loop
+                return
             }
         }
         print("Our specific characteristic UUID (\(characteristicUUID.uuidString)) not found for service \(service.uuid.uuidString) on peripheral \(peripheral.name ?? "Unknown").")

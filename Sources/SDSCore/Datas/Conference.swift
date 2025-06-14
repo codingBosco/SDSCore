@@ -7,7 +7,7 @@
 
 import Foundation
 
-///Un incontro tra gli studenti del pacchetto in cui è presente e dei relatori.
+///Una relazione tenuta da studenti o ospiti esterni che compone di uno o piu pacchetti
 @Observable
 public final class Conference: SDSEntity {
     

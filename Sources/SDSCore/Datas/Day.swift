@@ -44,15 +44,7 @@ public class Day: SDSEntity {
         
         id = try ct.decode(String.self, forKey: .id)
         
-        let dateString = try ct.decode(String.self, forKey: .date)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd-MM-YYYY hh-mm-ss"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        guard let parsedDate = formatter.date(from: dateString) else {
-            throw DecodingError.dataCorruptedError(forKey: .date, in: ct, debugDescription: "Formato data non valido: \(dateString)")
-        }
-        
-        date = parsedDate
+        date = try ct.decode(Date.self, forKey: .date)
         
         packs = try ct.decode([String].self, forKey: .packs)
     }
@@ -64,11 +56,4 @@ public class Day: SDSEntity {
         try ct.encode(packs, forKey: .packs)
     }
     
-}
-
-func convertToDate(from dateString: String) -> Date? {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "dd-MM-yyyy HH:mm:ss"
-    formatter.locale = Locale(identifier: "it_IT")
-    return formatter.date(from: dateString)
 }

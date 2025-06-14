@@ -64,6 +64,8 @@ public class MainCore {
     
     public var isConnected = false
     public var isWebSocketConnected = false
+    
+    //TODO: If app device storage is local invalidate the timer. Change it to Timer? and manage it at app boot.
     public let serverCheckTimer = Timer.publish(every: 20, on: .main, in: .common).autoconnect()
     
     private var webSocketTask: URLSessionWebSocketTask?
@@ -85,7 +87,7 @@ public class MainCore {
         errorMessage = ""
     }
     
-    ///Calls a POST function from the server for large amounts of datas with a specified body, request from the API itself.
+    ///Calls a POST function to the server's specified API with a body made up by only one item
     public func write<T: SDSEntity>(to api: API, with body: T) -> AnyPublisher<String, Error> {
         guard let url = URL(string: "\(serverURL)/\(api.route)") else {
             return Fail(error: ServerError.invalidURL)
@@ -117,7 +119,7 @@ public class MainCore {
         
     }
     
-    ///Calls a GET function from the server for large amount of datas and Arrays
+    ///Calls a GET function from the server's specified API to receive different items
     public func get<T: SDSEntity>(allFrom api: API, for type: [T].Type) -> AnyPublisher<[T], Error> {
         
         guard let url = URL(string: "\(serverURL)/\(api.route)") else {
@@ -146,7 +148,7 @@ public class MainCore {
             .eraseToAnyPublisher()
     }
     
-    ///Calls a GET function from the server for a single large data type.
+    ///Calls a GET function from the server's specified API to receive only one item
     public func get<T: SDSEntity>(from api: API, for type: T.Type) -> AnyPublisher<T, Error> {
         
         guard let url = URL(string: "\(serverURL)/\(api.route)") else {
@@ -175,7 +177,7 @@ public class MainCore {
             .eraseToAnyPublisher()
     }
     
-    ///Call a GET function from the server in an async way with a completion handler that passes the response data type.
+    ///Call a GET function from the server in an async way with a completion handler that passes the response item's data.
     public func get<T: Codable>(_ api: API, for type: T.Type, completionHandler: @escaping (T)->Void) async {
         do {
             guard let url = URL(string: "\(serverURL)/\(api.route)") else {
@@ -229,6 +231,7 @@ public class MainCore {
         }
     }
     
+    ///A function that authenticate the user with a given password (a.k.a secureCode) and return a LoginResponse for the app
     public func login(username: String, secureCode: String, completionHandler: @escaping (LoginRespone)->Void) async {
         do {
             guard let loginRoute = URL(string: "\(serverURL)/api/login/user=\(username)") else {
@@ -279,6 +282,7 @@ public class MainCore {
         }
     }
     
+    ///A function that confirm the authentication made by the app and return a full Profile for the app from the Server sessions.data file.
     public func login(username: String, sessionID: String) async -> Profile? {
         var profile: Profile?
         do {
@@ -326,6 +330,7 @@ public class MainCore {
         }?.id
     }
     
+    ///The app will connect to the server's websocket for continuosly listening and istant updates
     func connectToSocket() async {
         do {
             let socketSessions = URLSession(configuration: .default)
@@ -345,11 +350,15 @@ public class MainCore {
         }
     }
     
+    
+    ///The app will disconnect from the server's websocket with a speicified reason closure and data
     func disconnectFromSocket(with closing: URLSessionWebSocketTask.CloseCode = .normalClosure, reasonData: Data? = nil ) {
         webSocketTask?.cancel(with: closing, reason: reasonData)
         isWebSocketConnected = false
     }
     
+    
+    ///Sends a simple message to the socket, like an action or advertisement
     func sendToSocket(_ message: String) {
         let message = URLSessionWebSocketTask.Message.string(message)
         webSocketTask?.send(message) { error in
@@ -360,6 +369,7 @@ public class MainCore {
         }
     }
     
+    ///Sends a complex payload to the server, generally used for data editing and large size actions.
     func sendToSocket(with payload: Payload) async {
         do {
             let data = try JSONEncoder().encode(payload)
@@ -370,6 +380,7 @@ public class MainCore {
         }
     }
     
+    ///The app listens to the socket for messages and responses.
     func receiveFromSocket() async throws {
         let response = try await webSocketTask?.receive()
         switch response {
@@ -384,6 +395,8 @@ public class MainCore {
         }
     }
     
+    
+    ///A function that check all the connections to the server.
     public func checkConnection() async {
         await get(.routeTo(.avaibility), for: Response.self) { response in
             if response.result == "success" {
@@ -478,37 +491,37 @@ public class MainCore {
         }
     }
     
-    private static var tranchesFile: URL {
+    public static var tranchesFile: URL {
         return localDocumentDirectory.appendingPathComponent("tranches.data")
     }
     
-    private static var packsFile: URL {
+    public static var packsFile: URL {
         return localDocumentDirectory.appendingPathComponent("packs.data")
     }
     
-    private static var classesFile: URL {
+    public static var classesFile: URL {
         return localDocumentDirectory.appendingPathComponent("classes.data")
     }
     
-    private static var conferencesFile: URL {
+    public static var conferencesFile: URL {
         return localDocumentDirectory.appendingPathComponent("conferences.data")
     }
     
-    private static var studentsFile: URL {
+    public static var studentsFile: URL {
         return localDocumentDirectory.appendingPathComponent("students.data")
     }
     
-    private static var daysFile: URL {
+    public static var daysFile: URL {
         return localDocumentDirectory.appendingPathComponent("days.data")
     }
     
     public func localLoadAll() async {
         do {
+            try await tranches = localLoad(itemType: .tranche)
+            try await days = localLoad(itemType: .days)
             try await students = localLoad(itemType: .students)
             try await classes = localLoad(itemType: .classes)
-            try await tranches = localLoad(itemType: .tranche)
             try await conferences = localLoad(itemType: .conferences)
-            try await days = localLoad(itemType: .days)
             try await packs = localLoad(itemType: .packs)
         } catch {
             print("Couldn't load: \(error)")
@@ -516,14 +529,17 @@ public class MainCore {
     }
     
     public func localSaveAll() async throws {
+        try await localSave(items: days, for: .days)
+        try await localSave(items: tranches, for: .tranche)
         try await localSave(items: students, for: .students)
         try await localSave(items: packs, for: .packs)
         try await localSave(items: conferences, for: .conferences)
-        try await localSave(items: days, for: .days)
+
         try await localSave(items: classes, for: .classes)
-        try await localSave(items: tranches, for: .tranche)
+
     }
     
+    ///Locally saves a collection of items in a given file path
     public func localSave<T: SDSEntity>(items: [T], for itemType: ItemEntity, inFile: String) async throws {
         do {
             let data = try JSONEncoder().encode(items)
@@ -534,6 +550,7 @@ public class MainCore {
         }
     }
     
+    ///Loads a collection of items from a given file path
     public func localLoad<T: SDSEntity>(from fileName: String, itemType: ItemEntity) async throws -> [T] {
         do {
             guard let data = try? Data(contentsOf: MainCore.localDocumentDirectory.appendingPathComponent("\(fileName).data")) else {
@@ -543,11 +560,12 @@ public class MainCore {
             let items = try JSONDecoder().decode([T].self, from: data)
             return items
         } catch {
-            print("Couldn't load students, due to: \(error.localizedDescription)")
+            print("Couldn't load \(itemType.rawValue), due to: \(error)")
             return []
         }
     }
     
+    ///Locally load a collection of items from the corresponding file path
     public func localLoad<T: SDSEntity>(itemType: ItemEntity) async throws -> [T] {
         do {
             guard let data = try? Data(contentsOf: itemType.directoryURL) else {
@@ -557,19 +575,18 @@ public class MainCore {
             let items = try JSONDecoder().decode([T].self, from: data)
             return items
         } catch {
-            print("Couldn't load students, due to: \(error.localizedDescription)")
+            print("Couldn't load \(itemType.rawValue), due to: \(error)")
             return []
         }
     }
+    
     
     public func localSave<T: SDSEntity>(items: [T], for itemType: ItemEntity) async throws {
         do {
             let data = try JSONEncoder().encode(items)
             let output = itemType.directoryURL
             try data.write(to: output)
-            
-            print("saved in \(output)")
-            
+           
         } catch {
             print("Could't save the files")
         }
