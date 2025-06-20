@@ -462,6 +462,21 @@ extension GardenCore: @preconcurrency CBPeripheralManagerDelegate {
             subscribedCentrals.append(central)
         }
         
+        guard let connectedDevice = centralManager.retrievePeripherals(withIdentifiers: [central.identifier]).first else {
+            print("connection did not occured. No connected device retrieved")
+            return
+        }
+        connect(to: connectedDevice)
+        
+        #if os(iOS)
+        if isNearbySupported {
+            
+            setupNearbySession()
+            sendDiscoveryToken(as: .ask)
+            
+        }
+        #endif
+        
     }
 
     public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
@@ -689,6 +704,28 @@ public enum GardenPeerError: Error {
     
 }
 
+/// Codable representation of a CBPeripheral. Use this struct to encode/decode peripheral configuration, since CBPeripheral itself cannot be made Codable.
+public struct CodablePeripheral: Codable {
+    public let identifier: UUID
+    public let name: String?
+    
+    public init(identifier: UUID, name: String?) {
+        self.identifier = identifier
+        self.name = name
+    }
+    
+    public init(from peripheral: CBPeripheral) {
+        self.identifier = peripheral.identifier
+        self.name = peripheral.name
+    }
+}
+
+// Example usage:
+// let codable = CodablePeripheral(from: peripheral)
+// let data = try JSONEncoder().encode(codable)
+// let decoded = try JSONDecoder().decode(CodablePeripheral.self, from: data)
+// Re-acquire the peripheral later with centralManager.retrievePeripherals(withIdentifiers: [decoded.identifier])
+
 #if os(iOS)
 import NearbyInteraction
 
@@ -732,3 +769,4 @@ extension GardenCore: @preconcurrency NISessionDelegate {
 
 }
 #endif
+
