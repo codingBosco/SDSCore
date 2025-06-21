@@ -1,0 +1,47 @@
+# Nome del workflow che apparirà nella tab "Actions" di GitHub
+name: Deploy SDSCore Documentation
+
+# Trigger: Esegui questo workflow ogni volta che fai un push sulla branch `main`
+on:
+  push:
+    branches: [ "main" ]
+
+# Permessi: Concedi al workflow i permessi necessari per scrivere sulle GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Lavoro da eseguire
+jobs:
+  build-and-deploy:
+    # Usa l'ultima versione di macOS, che include Swift e Xcode
+    runs-on: macos-latest
+
+    steps:
+      # 1. Fa il checkout del tuo codice dal repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      - name: Get Repository Name
+        run: echo "SDSCore=$(echo '$SDSCore' | cut -d'/' -f2)" >> $GITHUB_ENV
+      
+      
+      - name: Generate DocC Documentation
+        run: |
+          swift package --allow-writing-to-directory ./docs-build \
+          generate-documentation --target SDSCore \
+          --output-path ./docs-build \
+          --hosting-base-path /${{ env.SDSCore }}
+
+      # 4. Carica i file generati come un "artifact" che GitHub Pages può usare
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs-build
+
+      # 5. Esegue il deploy dell'artifact su GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
